@@ -90,7 +90,6 @@ public class BBGRawTick {
     private void run(String[] args) throws Exception
     {
         if (!parseCommandLine(args)) return;
-
         SessionOptions sessionOptions = new SessionOptions();
         sessionOptions.setServerHost(d_host);
         sessionOptions.setServerPort(d_port);
@@ -105,6 +104,8 @@ public class BBGRawTick {
             System.err.println("Failed to open //blp/refdata");
             return;
         }
+        
+        //TODO: Read stocks data into d_secs!!!
         
         for (String security : d_secs){
             writer = new PrintWriter(security+".csv", "UTF-8");
