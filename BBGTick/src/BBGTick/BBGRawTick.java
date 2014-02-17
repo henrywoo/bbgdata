@@ -1,7 +1,5 @@
 package BBGTick;
-
 // -sd 2012-11-01T05:30:00 -ed 2012-11-02T20:30:00
-//package com.bloomberglp.blpapi.examples;
 
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
@@ -21,7 +19,6 @@ import java.util.Calendar;
 import java.io.PrintWriter;
 
 public class BBGRawTick {
-
     private static final Name TICK_DATA      = new Name("tickData");
     private static final Name COND_CODE      = new Name("conditionCodes");
     private static final Name SIZE           = new Name("size");
@@ -34,7 +31,8 @@ public class BBGRawTick {
 
     private String            d_host;
     private int               d_port;
-    private String            d_security;
+    //private String            d_security;
+    private ArrayList<String> d_secs;
     private ArrayList<String> d_events;
     private boolean           d_conditionCodes;
     private String            d_startDateTime;
@@ -43,16 +41,10 @@ public class BBGRawTick {
     private DecimalFormat     d_decimalFormat;
     private PrintWriter writer;
 
-    /**
-     * @param args
-     */
     public static void main(String[] args) throws Exception
     {
-        //System.out.println("Intraday Rawticks Example");
         BBGRawTick brt = new BBGRawTick();
-        
         brt.run(args);
-
         //System.out.println("Press ENTER to quit");
         //System.in.read();
     }
@@ -84,7 +76,8 @@ public class BBGRawTick {
         //d_security = "QZX2 Index";   //futures index
         //d_security = "GBPUSD Curncy";//forex option
         //d_security = "GOOG US 11/17/12 C680 EQUITY";//option
-        d_security = "BITA US 03/22/14 C35 Equity";
+        //d_security = "BITA US 03/22/14 C35 Equity";
+        d_secs = new ArrayList<String>();
         d_events = new ArrayList<String>();
         d_conditionCodes = false;
 
@@ -113,17 +106,17 @@ public class BBGRawTick {
             return;
         }
         
-        writer = new PrintWriter("bita-options.csv", "UTF-8");
-        writer.println("TIME,TYPE,VALUE,SIZE,CC");
-
-        sendIntradayTickRequest(session);
-
-        // wait for events from session.
-        eventLoop(session);
-
+        for (String security : d_secs){
+            writer = new PrintWriter(security+".csv", "UTF-8");
+            writer.println("TIME,TYPE,VALUE,SIZE,CC");
+            sendIntradayTickRequest(session, security);
+            // wait for events from session.
+            eventLoop(session);
+            writer.close();
+        }
+        
+        
         session.stop();
-
-        writer.close();
     }
 
     private void eventLoop(Session session) throws Exception
@@ -178,11 +171,11 @@ public class BBGRawTick {
 
             writer.println(t+","+ty+","+val+","+sz+","+cc);
 
-            System.out.println(d_dateFormat.format(time.calendar().getTime()) + "\t" +
+            /*System.out.println(d_dateFormat.format(time.calendar().getTime()) + "\t" +
                     type + "\t" +
                     d_decimalFormat.format(value) + "\t\t" +
                     d_decimalFormat.format(size) + "\t" +
-                    cc);
+                    cc);*/
         }
     }
 
@@ -198,12 +191,12 @@ public class BBGRawTick {
         }
     }
 
-    private void sendIntradayTickRequest(Session session) throws Exception
+    private void sendIntradayTickRequest(Session session, String sec) throws Exception
     {
         Service refDataService = session.getService("//blp/refdata");
         Request request = refDataService.createRequest("IntradayTickRequest");
 
-        request.set("security", d_security);
+        request.set("security", sec);
 
         // Add fields to request
         Element eventTypes = request.getElement("eventTypes");
@@ -212,16 +205,13 @@ public class BBGRawTick {
         }
 
         if (d_startDateTime == null || d_endDateTime == null) {
-        	Calendar calendar = getPreviousTradingDate();
-        	Datetime prevTradedDate = new Datetime(calendar);
-
+            Calendar calendar = getPreviousTradingDate();
+            Datetime prevTradedDate = new Datetime(calendar);
             request.set("startDateTime", prevTradedDate);
             calendar.roll(Calendar.MINUTE, +5);
-
             Datetime endDateTime = new Datetime(calendar);
             request.set("endDateTime", endDateTime);
-        }
-        else {
+        } else {
         	// All times are in GMT
         	request.set("startDateTime", d_startDateTime);
         	request.set("endDateTime", d_endDateTime);
@@ -238,10 +228,10 @@ public class BBGRawTick {
     private boolean parseCommandLine(String[] args)
     {
         for (int i = 0; i < args.length; ++i) {
-            if (args[i].equalsIgnoreCase("-s")) {
+            /*if (args[i].equalsIgnoreCase("-s")) {
                 d_security = args[i+1];
             }
-            else if (args[i].equalsIgnoreCase("-e")) {
+            else */if (args[i].equalsIgnoreCase("-e")) {
                 d_events.add(args[i+1]);
             }
             else if (args[i].equalsIgnoreCase("-cc")) {
@@ -283,7 +273,7 @@ public class BBGRawTick {
     {
         System.out.println("Usage:");
         System.out.println("  Retrieve intraday rawticks ");
-        System.out.println("    [-s     <security	= IBM US Equity>");
+        //System.out.println("    [-s     <security	= IBM US Equity>");
         System.out.println("    [-e     <event		= TRADE>");
         System.out.println("    [-sd    <startDateTime  = 2008-02-11T15:30:00>");
         System.out.println("    [-ed    <endDateTime    = 2008-02-11T15:35:00>");
