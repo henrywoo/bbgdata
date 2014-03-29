@@ -34,7 +34,6 @@ public class BBGRawTick {
     //private String            d_security;
     private ArrayList<String> d_secs;
     private ArrayList<String> d_events;
-    private boolean           d_conditionCodes;
     private String            d_startDateTime;
     private String            d_endDateTime;
     private SimpleDateFormat  d_dateFormat;
@@ -70,7 +69,8 @@ public class BBGRawTick {
 
     public BBGRawTick()
     {
-        d_host = "localhost";
+        d_host = "localhost";//172.29.34.244
+        //d_host = "172.29.34.244";
         d_port = 8194;
         //d_security = "ATHM US Equity";//stock
         //d_security = "QZX2 Index";   //futures index
@@ -78,13 +78,15 @@ public class BBGRawTick {
         //d_security = "GOOG US 11/17/12 C680 EQUITY";//option
         //d_security = "BITA US 03/22/14 C35 Equity";
         d_secs = new ArrayList<String>();
+        d_secs.add("BITA US Equity");
         d_events = new ArrayList<String>();
-        d_conditionCodes = false;
-
         d_dateFormat = new SimpleDateFormat();
         d_dateFormat.applyPattern("MM/dd/yyyy k:mm:ss");
         d_decimalFormat = new DecimalFormat();
         d_decimalFormat.setMaximumFractionDigits(3);
+        
+        d_startDateTime="2013-12-01T00:00:00";
+        d_endDateTime="2014-04-16T00:00:00";
     }
 
     private void run(String[] args) throws Exception
@@ -104,6 +106,8 @@ public class BBGRawTick {
             System.err.println("Failed to open //blp/refdata");
             return;
         }
+        
+        //172.29.34.244
         
         //TODO: Read stocks data into d_secs!!!
         
@@ -172,11 +176,11 @@ public class BBGRawTick {
 
             writer.println(t+","+ty+","+val+","+sz+","+cc);
 
-            /*System.out.println(d_dateFormat.format(time.calendar().getTime()) + "\t" +
+            System.out.println(d_dateFormat.format(time.calendar().getTime()) + "\t" +
                     type + "\t" +
                     d_decimalFormat.format(value) + "\t\t" +
                     d_decimalFormat.format(size) + "\t" +
-                    cc);*/
+                    cc);
         }
     }
 
@@ -204,24 +208,13 @@ public class BBGRawTick {
         for (String event : d_events) {
             eventTypes.appendValue(event);
         }
+        eventTypes.appendValue("BEST_BID");//henry
+        eventTypes.appendValue("BEST_ASK");
 
-        if (d_startDateTime == null || d_endDateTime == null) {
-            Calendar calendar = getPreviousTradingDate();
-            Datetime prevTradedDate = new Datetime(calendar);
-            request.set("startDateTime", prevTradedDate);
-            calendar.roll(Calendar.MINUTE, +5);
-            Datetime endDateTime = new Datetime(calendar);
-            request.set("endDateTime", endDateTime);
-        } else {
-        	// All times are in GMT
-        	request.set("startDateTime", d_startDateTime);
-        	request.set("endDateTime", d_endDateTime);
-        }
-
-        if (d_conditionCodes) {
-            request.set("includeConditionCodes", true);
-        }
-
+        // All times are in GMT
+        request.set("startDateTime", d_startDateTime);
+        request.set("endDateTime", d_endDateTime);
+        request.set("includeConditionCodes", true);
         System.out.println("Sending Request: " + request);
         session.sendRequest(request, null);
     }
@@ -234,9 +227,6 @@ public class BBGRawTick {
             }
             else */if (args[i].equalsIgnoreCase("-e")) {
                 d_events.add(args[i+1]);
-            }
-            else if (args[i].equalsIgnoreCase("-cc")) {
-                d_conditionCodes = true;
             }
             else if (args[i].equalsIgnoreCase("-sd")) {
                 d_startDateTime = args[i+1];

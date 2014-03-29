@@ -1,5 +1,7 @@
 # Include the Dropbox SDK
 import dropbox
+import time
+import os
 
 # Get your app key and secret from the Dropbox developer website
 app_key = 'yora28jjyc8zk96'
@@ -21,6 +23,20 @@ access_token, user_id = flow.finish(code)
 client = dropbox.client.DropboxClient(access_token)
 print 'linked account: ', client.account_info()
 
-f = open('BBGTick\\athm.csv', 'rb')
-response = client.put_file('/athm.txt', f)
-print "uploaded:", response
+uploaded=set()
+while True:
+    time.sleep(2)
+    fs=os.listdir('F:\\bbgdata\\BBGTick')
+    for i in fs:
+        if i[0:5]=='done.':
+            fname=i[5:]
+            fp='BBGTick\\'+fname
+            print "processing",fp
+            fp2='BBGTick\\done.'+fname
+            f = open(fp, 'rb')
+            response = client.put_file('BBG/'+fname, f)
+            f.close()
+            os.rename('F:\\bbgdata\\'+fp,'F:\\uploaded\\'+fname)
+            os.remove(fp2)
+            print "uploaded:", response
+
